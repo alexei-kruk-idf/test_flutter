@@ -82,15 +82,6 @@ class CarouselWidget extends StatefulWidget {
 
   final Color inactiveColorButtonDirection;
 
-  //  : 24,
-  //                         iconSize: 24,
-  //                         onPressed: _goPreviousPage,
-  //                         icon: Icon(Icons.navigate_before,
-  //                             color: _currentPageNotifier.value == 0 &&
-  //                                     !widget.isLoop
-  //                                 ? whiteRed
-  //                                 : red),
-
   /// Called whenever the page in the center of the viewport changes.
   final ValueChanged<int>? onPageChanged;
 
