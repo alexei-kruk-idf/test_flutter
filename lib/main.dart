@@ -50,14 +50,23 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SafeArea(
         child: Center(
           child: CarouselWidget(
+            //    this.activeColorButtonDirection = const Color.fromRGBO(232, 25, 75, 1),
+            // this.inactiveColorButtonDirection = const Color.fromRGBO(232, 25, 75, 0.3),
             //isLoop: true,
             //autoPlayInterval: 1000,
             //initialPage: 5,
-            // width: 312,
-            // height: 290,
+            width: 312,
+            height: 290,
             useButtonDirection: true,
             useCounter: true,
-            useIndicator: false,
+            useIndicator: true,
+            textStyleCounter: const TextStyle(
+              fontSize: 20,
+              color: Colors.white,
+            ),
+            colorCounter: Color.fromRGBO(232, 25, 75, 1),
+            activeColorButtonDirection: Color.fromRGBO(232, 25, 75, 1),
+            inactiveColorButtonDirection: Color.fromRGBO(232, 25, 75, 0.3),
             children: [
               Image.asset('assets/home_bank_1.png'),
               Image.asset('assets/home_bank_2.png'),

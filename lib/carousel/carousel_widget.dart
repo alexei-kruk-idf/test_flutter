@@ -12,9 +12,9 @@ class CarouselWidget extends StatefulWidget {
     this.width = double.infinity,
     this.height = 200,
     this.initialPage = 0,
-    // TODO: Исправить
     this.indicatorActiveColor,
-    this.indicatorInactiveColor = Colors.grey,
+    this.indicatorInactiveColor,
+    this.offsetIndicator = 25,
     this.onPageChanged,
     this.autoPlayInterval,
     this.isLoop = false,
@@ -26,12 +26,13 @@ class CarouselWidget extends StatefulWidget {
     required this.useCounter,
     this.widthCounter = 40,
     this.heightCounter = 40,
+    this.textStyleCounter,
+    this.colorCounter,
     required this.useButtonDirection,
     this.splashRadiusButtonDirection = 24,
     this.iconSizeButtonDirection = 24,
-    // TODO: Исправить
-    this.activeColorButtonDirection = const Color.fromRGBO(232, 25, 75, 1),
-    this.inactiveColorButtonDirection = const Color.fromRGBO(232, 25, 75, 0.3),
+    this.activeColorButtonDirection,
+    this.inactiveColorButtonDirection,
   }) : super(key: key);
 
   /// The widgets to display in the [CarouselWidget].
@@ -54,33 +55,53 @@ class CarouselWidget extends StatefulWidget {
   /// The color to paint behind th indicator.
   final Color? indicatorInactiveColor;
 
-  //
+  // Radius of the active indicator
   final double radiusActiveIndicator;
 
-  //
+  // Radius of the inactive indicator
   final double radiusInactiveIndicator;
 
+  // Interval between indicators
   final double indicatorSpacing;
 
+  // Start interval
   final double indicatorRunSpacing;
 
+  // Use indicator
   final bool useIndicator;
 
+  // Interval between the carousel and the indicator
+  final double offsetIndicator;
+
+  // Use counter
   final bool useCounter;
 
+  // Width counter
   final double widthCounter;
 
+  // Height counter
   final double heightCounter;
 
+  // Style of text inside counter
+  final TextStyle? textStyleCounter;
+
+  // Color counter
+  final Color? colorCounter;
+
+  // Use the buttons that are on the sides
   final bool useButtonDirection;
 
+  // Splash radius direction button
   final double splashRadiusButtonDirection;
 
+  // Icon size direction button
   final double iconSizeButtonDirection;
 
-  final Color activeColorButtonDirection;
+  // Color of active button
+  final Color? activeColorButtonDirection;
 
-  final Color inactiveColorButtonDirection;
+  // Color of inactive button
+  final Color? inactiveColorButtonDirection;
 
   /// Called whenever the page in the center of the viewport changes.
   final ValueChanged<int>? onPageChanged;
@@ -106,7 +127,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
   void _onPageChanged(int index) {
     _currentIndex = index;
     final int currentPage = _getRealIndex(
-      index + widget.initialPage,
+      _currentIndex + widget.initialPage,
       _realPage,
       widget.children.length,
     );
@@ -175,9 +196,11 @@ class _CarouselWidgetState extends State<CarouselWidget> {
   void initState() {
     _realPage =
         widget.isLoop ? _realPage + widget.initialPage : widget.initialPage;
+
     _pageController = PageController(initialPage: _realPage);
     _currentPageNotifier.value = widget.initialPage;
     _currentIndex = _realPage;
+
     if (widget.autoPlayInterval != null && widget.autoPlayInterval != 0) {
       _autoPlayTimerStart();
     }
@@ -196,126 +219,124 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: Stack(
+      child: Column(
         children: [
-          //Counter
+          //  Counter
           widget.useCounter
+              ? Align(
+                  alignment: Alignment.topLeft,
+                  child: ValueListenableBuilder<int>(
+                    valueListenable: _currentPageNotifier,
+                    builder: (context, value, child) {
+                      return Container(
+                        width: widget.widthCounter,
+                        height: widget.heightCounter,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: widget.colorCounter,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          (_currentPageNotifier.value + 1).toString(),
+                          style: widget.textStyleCounter,
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : const SizedBox(),
+          Expanded(
+            child: Row(
+              children: [
+                // Button previous page
+                widget.useButtonDirection
+                    ? ValueListenableBuilder<int>(
+                        valueListenable: _currentPageNotifier,
+                        builder: (context, value, child) {
+                          return IconButton(
+                            splashRadius: widget.splashRadiusButtonDirection,
+                            iconSize: widget.iconSizeButtonDirection,
+                            onPressed: _goPreviousPage,
+                            icon: Icon(
+                              Icons.navigate_before,
+                              color: _currentPageNotifier.value == 0 &&
+                                      !widget.isLoop
+                                  ? widget.inactiveColorButtonDirection
+                                  : widget.activeColorButtonDirection,
+                            ),
+                          );
+                        },
+                      )
+                    : const SizedBox(),
+                //  Carousel
+                Expanded(
+                  child: PageView.builder(
+                    scrollBehavior: const ScrollBehavior().copyWith(
+                      scrollbars: false,
+                      overscroll: false,
+                      dragDevices: {
+                        PointerDeviceKind.touch,
+                        PointerDeviceKind.mouse,
+                      },
+                    ),
+                    onPageChanged: _onPageChanged,
+                    itemCount: widget.isLoop ? null : widget.children.length,
+                    controller: _pageController,
+                    itemBuilder: (context, index) {
+                      final int currentPage = _getRealIndex(
+                        index + widget.initialPage,
+                        _realPage,
+                        widget.children.length,
+                      );
+                      return widget.children[currentPage];
+                    },
+                  ),
+                ),
+                // Button next page
+                widget.useButtonDirection
+                    ? ValueListenableBuilder<int>(
+                        valueListenable: _currentPageNotifier,
+                        builder: (context, value, child) {
+                          return IconButton(
+                            splashRadius: widget.splashRadiusButtonDirection,
+                            iconSize: widget.iconSizeButtonDirection,
+                            onPressed: _goNextPage,
+                            icon: Icon(
+                              Icons.navigate_next,
+                              color: _currentPageNotifier.value ==
+                                          widget.children.length - 1 &&
+                                      !widget.isLoop
+                                  ? widget.inactiveColorButtonDirection
+                                  : widget.activeColorButtonDirection,
+                            ),
+                          );
+                        },
+                      )
+                    : const SizedBox(),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: widget.offsetIndicator,
+          ),
+          // Bottom indicator
+          widget.useIndicator
               ? ValueListenableBuilder<int>(
                   valueListenable: _currentPageNotifier,
                   builder: (context, value, child) {
-                    return Container(
-                      width: widget.widthCounter,
-                      height: widget.heightCounter,
-                      decoration: BoxDecoration(
-                        color: widget.activeColorButtonDirection,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          (_currentPageNotifier.value + 1).toString(),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                    return CarouselIndicator(
+                      count: widget.children.length,
+                      currentIndex: value,
+                      indicatorActiveColor: widget.indicatorActiveColor,
+                      indicatorInactiveColor: widget.indicatorInactiveColor,
+                      radiusActiveIndicator: widget.radiusActiveIndicator,
+                      radiusInactiveIndicator: widget.radiusInactiveIndicator,
+                      indicatorRunSpacing: widget.indicatorRunSpacing,
+                      indicatorSpacing: widget.indicatorSpacing,
                     );
                   },
                 )
               : const SizedBox(),
-          Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    // Button previous page
-                    widget.useButtonDirection
-                        ? ValueListenableBuilder<int>(
-                            valueListenable: _currentPageNotifier,
-                            builder: (context, value, child) {
-                              return IconButton(
-                                splashRadius: 24,
-                                iconSize: 24,
-                                onPressed: _goPreviousPage,
-                                icon: Icon(Icons.navigate_before,
-                                    color: _currentPageNotifier.value == 0 &&
-                                            !widget.isLoop
-                                        ? widget.inactiveColorButtonDirection
-                                        : widget.activeColorButtonDirection),
-                              );
-                            },
-                          )
-                        : SizedBox(),
-                    Expanded(
-                      child: PageView.builder(
-                        scrollBehavior: const ScrollBehavior().copyWith(
-                          scrollbars: false,
-                          overscroll: false,
-                          dragDevices: {
-                            PointerDeviceKind.touch,
-                            PointerDeviceKind.mouse,
-                          },
-                        ),
-                        onPageChanged: _onPageChanged,
-                        itemCount:
-                            widget.isLoop ? null : widget.children.length,
-                        controller: _pageController,
-                        itemBuilder: (context, index) {
-                          final int currentPage = _getRealIndex(
-                            index + widget.initialPage,
-                            _realPage,
-                            widget.children.length,
-                          );
-                          return widget.children[currentPage];
-                        },
-                      ),
-                    ),
-                    // Button next page
-                    widget.useButtonDirection
-                        ? ValueListenableBuilder<int>(
-                            valueListenable: _currentPageNotifier,
-                            builder: (context, value, child) {
-                              return IconButton(
-                                splashRadius: 24,
-                                iconSize: 24,
-                                onPressed: _goNextPage,
-                                icon: Icon(Icons.navigate_next,
-                                    color: _currentPageNotifier.value ==
-                                                widget.children.length - 1 &&
-                                            !widget.isLoop
-                                        ? widget.inactiveColorButtonDirection
-                                        : widget.activeColorButtonDirection),
-                              );
-                            },
-                          )
-                        : SizedBox(),
-                  ],
-                ),
-              ),
-              const SizedBox(
-                height: 25,
-              ),
-              // Bottom indicator
-              widget.useIndicator
-                  ? ValueListenableBuilder<int>(
-                      valueListenable: _currentPageNotifier,
-                      builder: (context, value, child) {
-                        return CarouselIndicator(
-                          count: widget.children.length,
-                          currentIndex: value,
-                          indicatorActiveColor: widget.indicatorActiveColor,
-                          indicatorInactiveColor: widget.indicatorInactiveColor,
-                          radiusActiveIndicator: widget.radiusActiveIndicator,
-                          radiusInactiveIndicator:
-                              widget.radiusInactiveIndicator,
-                          indicatorRunSpacing: widget.indicatorRunSpacing,
-                          indicatorSpacing: widget.indicatorSpacing,
-                        );
-                      },
-                    )
-                  : SizedBox(),
-            ],
-          ),
         ],
       ),
     );
